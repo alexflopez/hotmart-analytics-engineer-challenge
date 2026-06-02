@@ -1,0 +1,1 @@
+# Estratégia de Qualidade de Dados
