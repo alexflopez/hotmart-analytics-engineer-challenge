@@ -1,2 +1,19 @@
-# hotmart-analytics-engineer-challenge
-Desafio técnico para Analytics Engineer focado na construção de um pipeline confiável de GMV, com modelagem histórica, processamento CDC, idempotência, qualidade de dados e rastreabilidade.
+# Hotmart Analytics Engineer Challenge
+
+## Objetivo
+
+Desenvolver uma solução para cálculo de GMV por subsidiária considerando eventos CDC, modelagem histórica, idempotência, qualidade de dados e rastreabilidade.
+
+## Estrutura do Projeto
+
+- docs
+- sql
+- spark
+- tests
+- diagrams
+- data
+- notebooks
+
+## Status
+
+🚧 Em desenvolvimento
