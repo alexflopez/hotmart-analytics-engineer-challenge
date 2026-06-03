@@ -39,7 +39,10 @@ Validações:
 Validações:
 
 * `purchase_id` não pode ser nulo.
-* `subsidiary` não pode ser nula.
+
+> `subsidiary` pode ser nula na entrada — o evento pode ainda não ter chegado devido ao
+> assincronismo entre tabelas. Registros sem `subsidiary` são preservados via `LEFT JOIN`
+> e excluídos do GMV no filtro de negócio, não na validação de entrada.
 
 ## Consistência dos Eventos CDC
 
