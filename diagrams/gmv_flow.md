@@ -2,7 +2,7 @@
 
 ```mermaid
 flowchart TD
-    A([Início — D-1]) --> B
+    A(["MWAA / Airflow"]) --> B
 
     subgraph EXTRACT["Extração — S3 eventos CDC"]
         B[purchase]
@@ -14,7 +14,7 @@ flowchart TD
     C --> F
     D --> G
 
-    subgraph TRANSFORM["Transformação — PySpark"]
+    subgraph TRANSFORM["Transformação — PySpark / EMR"]
         E["Qualidade + Deduplica purchase\nMAX transaction_datetime\npor purchase_id"]
         F["Qualidade + Deduplica product_item\nMAX transaction_datetime\npor prod_item_id"]
         G["Qualidade + Deduplica purchase_extra_info\nMAX transaction_datetime\npor purchase_id"]
@@ -68,3 +68,4 @@ A agregação ocorre **na query**, após identificar o registro mais recente de 
 | Assincronismo entre tabelas | `LEFT JOIN` preserva compras com eventos ainda pendentes |
 | Particionamento | `partitionBy("transaction_date")` — partition pruning no Athena |
 | Sem multiplicidade na query | `ROW_NUMBER` antes do `SUM` — estado mais recente por compra |
+| Execução D-1 | `schedule_interval="0 6 * * *"` na DAG + `date.today() - timedelta(days=1)` no ETL |
