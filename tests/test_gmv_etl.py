@@ -55,8 +55,8 @@ def test_deduplication_keeps_latest_event(spark):
 
 def test_gmv_excludes_null_release_date(spark):
     data = [
-        (55, date(2023, 1, 20), "APROVADA"),   # ✅ entra
-        (56, None,              "INICIADA"),    # ❌ release_date nula
+        (55, date(2023, 1, 20), "APROVADA"),
+        (56, None,              "INICIADA"),
     ]
     df = spark.createDataFrame(data, ["purchase_id", "release_date", "purchase_status"])
     result = df.filter(F.col("release_date").isNotNull())
@@ -71,10 +71,10 @@ def test_gmv_excludes_null_release_date(spark):
 
 def test_gmv_excludes_cancelled_and_refunded(spark):
     data = [
-        (55, date(2023, 1, 20), "APROVADA"),    # ✅ entra
-        (56, date(2023, 1, 21), "CANCELADA"),   # ❌ cancelada
-        (57, date(2023, 1, 22), "REEMBOLSADA"), # ❌ reembolsada
-        (58, date(2023, 1, 23), "INICIADA"),    # ❌ não aprovada
+        (55, date(2023, 1, 20), "APROVADA"),
+        (56, date(2023, 1, 21), "CANCELADA"),
+        (57, date(2023, 1, 22), "REEMBOLSADA"),
+        (58, date(2023, 1, 23), "INICIADA"),
     ]
     df = spark.createDataFrame(data, ["purchase_id", "release_date", "purchase_status"])
     result = df.filter(F.col("purchase_status").isin("APROVADA"))
@@ -90,10 +90,10 @@ def test_gmv_excludes_cancelled_and_refunded(spark):
 
 def test_quality_filter_removes_invalid_purchase_value(spark):
     data = [
-        ("prod_1", 55.00,  datetime(2023, 1, 20)),   # ✅ válido
-        ("prod_2", None,   datetime(2023, 1, 21)),    # ❌ valor nulo
-        ("prod_3", 0.00,   datetime(2023, 1, 22)),    # ❌ valor zero
-        ("prod_4", -10.00, datetime(2023, 1, 23)),    # ❌ valor negativo
+        ("prod_1", 55.00,  datetime(2023, 1, 20)),
+        ("prod_2", None,   datetime(2023, 1, 21)),
+        ("prod_3", 0.00,   datetime(2023, 1, 22)),
+        ("prod_4", -10.00, datetime(2023, 1, 23)),
     ]
     df = spark.createDataFrame(data, ["prod_item_id", "purchase_value", "transaction_datetime"])
     result = df.filter(
@@ -147,15 +147,15 @@ def test_gmv_aggregation_is_correct(spark):
 # ================================================================
 
 def test_append_preserves_history(spark, tmp_path):
-    output = str(tmp_path / "gmv_daily_snapshot")
+    output = str(tmp_path / "gmv_purchase_snapshot")
 
     s1 = spark.createDataFrame(
-        [(date(2023, 1, 21), "nacional",      50.00, 1, date(2023, 1, 20))],
-        ["snapshot_date", "subsidiary", "gmv", "purchase_count", "transaction_date"]
+        [(date(2023, 1, 21), 55, date(2023, 1, 20), date(2023, 1, 20), "APROVADA", 55.00, "nacional",      date(2023, 1, 20))],
+        ["snapshot_date", "purchase_id", "order_date", "release_date", "purchase_status", "purchase_value", "subsidiary", "transaction_date"]
     )
     s2 = spark.createDataFrame(
-        [(date(2023, 7, 16), "nacional",      55.00, 1, date(2023, 1, 20))],
-        ["snapshot_date", "subsidiary", "gmv", "purchase_count", "transaction_date"]
+        [(date(2023, 7, 16), 55, date(2023, 1, 20), date(2023, 1, 20), "APROVADA", 55.00, "nacional",      date(2023, 1, 20))],
+        ["snapshot_date", "purchase_id", "order_date", "release_date", "purchase_status", "purchase_value", "subsidiary", "transaction_date"]
     )
 
     s1.write.mode("append").partitionBy("transaction_date").parquet(output)
