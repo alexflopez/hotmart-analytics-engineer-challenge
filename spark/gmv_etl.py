@@ -16,6 +16,7 @@ Definição de GMV (conforme desafio):
     e não foi cancelado:
         - release_date IS NOT NULL
         - purchase_status = 'APROVADA'
+        - subsidiary IS NOT NULL
 
 Modelagem da tabela final:
     Granularidade: uma linha por (snapshot_date, purchase_id).
