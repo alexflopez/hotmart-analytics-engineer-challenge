@@ -46,11 +46,26 @@ Anomalias nesses indicadores podem indicar falhas de ingestão ou problemas nas 
 
 ## Estratégia de Alertas
 
-Em ambiente produtivo, recomenda-se integração com Amazon CloudWatch e Amazon SNS para geração automática de alertas.
+A solução utiliza dois canais de notificação complementares, ambos disparados automaticamente pela DAG (`dag_gmv.py`) em caso de falha em qualquer etapa do pipeline:
 
-Os alertas devem ser disparados quando ocorrer:
+### E-mail
 
-* Falha na execução do pipeline.
+A DAG dispara um `EmailOperator` com `trigger_rule=ONE_FAILED` assim que qualquer task falha. O e-mail contém:
+
+* Nome da DAG e da task que falhou.
+* Data de execução.
+* Link direto para o log no Airflow.
+
+Os destinatários são configurados na Airflow Variable `gmv_alert_emails` (separados por vírgula). O envio utiliza o servidor SMTP configurado no ambiente MWAA.
+
+### Amazon SNS
+
+Em paralelo ao e-mail, a DAG publica uma mensagem no tópico SNS configurado em `gmv_sns_topic_arn`, permitindo integração com outros sistemas de alerta (PagerDuty, Slack, etc.).
+
+### Demais condições de alerta
+
+Recomenda-se configurar alertas adicionais no Amazon CloudWatch quando ocorrer:
+
 * Tempo de processamento acima do esperado.
 * Falha de leitura ou escrita no S3.
 * Queda abrupta no volume de registros processados.
