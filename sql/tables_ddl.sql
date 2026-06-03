@@ -1,5 +1,3 @@
-# Dialeto utilizado: ANSI SQL
-
 CREATE TABLE product_item (
     prod_item_id            BIGINT      NOT NULL,   -- identificador do item de compra
     prod_item_partition     BIGINT,                 -- partição no lake para o item da compra
