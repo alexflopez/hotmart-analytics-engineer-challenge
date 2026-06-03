@@ -6,6 +6,8 @@ Solução técnica para o desafio de Analytics Engineer da Hotmart, composta por
 
 ```
 hotmart-analytics-engineer-challenge/
+├── dags/
+│   └── dag_gmv.py                              # DAG Airflow — orquestração do pipeline D-1
 ├── data/
 │   └── exercicio_2_amostra_dados_teste.sql     # Dataset de exemplo com navegação temporal
 ├── diagrams/
@@ -78,6 +80,7 @@ A mesma compra se repete a cada execução do pipeline — esse é o comportamen
 | Catálogo | AWS Glue Data Catalog |
 | Consulta | AWS Athena |
 | Orquestração | Amazon MWAA (Airflow) |
+| Alertas | Amazon SNS + E-mail |
 | Monitoramento | Amazon CloudWatch |
 
 ### Como executar
@@ -101,4 +104,5 @@ pytest tests/test_gmv_etl.py -v
 | `sql/exercicio_2_gmv.sql` | Query GMV corrente e navegação temporal |
 | `docs/tech_stack.md` | Descrição da tech stack AWS |
 | `diagrams/gmv_flow.md` | Fluxograma do pipeline |
+| `dags/dag_gmv.py` | DAG de orquestração do pipeline |
 | `tests/test_gmv_etl.py` | Testes unitários |
