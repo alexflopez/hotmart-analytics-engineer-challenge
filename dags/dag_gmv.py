@@ -3,23 +3,16 @@ DAG — GMV Purchase Snapshot (D-1)
 ===================================
 Orquestra o pipeline ETL de GMV diário por subsidiária.
 
-Gatilhos:
-    As três tabelas de origem são gatilhos independentes para atualização
-    da tabela final. A DAG monitora as pastas S3 de cada tabela via
-    S3KeySensor. Quando qualquer uma delas recebe um arquivo novo referente
-    ao dia anterior (D-1), o pipeline é disparado.
-
-    purchase             ─┐
-    product_item         ─┼─→ S3KeySensor (trigger_rule=ONE_SUCCESS) → EMR → MSCK
-    purchase_extra_info  ─┘
-
 Fluxo:
-    1. Três sensores monitoram as pastas S3 de cada tabela (em paralelo).
-    2. Assim que qualquer sensor detecta arquivo novo (ONE_SUCCESS), o job
-       PySpark é submetido ao EMR.
-    3. Após conclusão do job, MSCK REPAIR TABLE sincroniza as novas
+    1. Às 06h00 UTC, o job PySpark é submetido ao EMR.
+    2. Após conclusão, MSCK REPAIR TABLE sincroniza as novas
        partições no Glue Data Catalog.
-    4. Em caso de falha, alertas são enviados via SNS e e-mail em paralelo.
+    3. Em caso de falha, alertas são enviados via SNS e e-mail em paralelo.
+
+Frequência:
+    D-1 — executa diariamente às 06h00 UTC processando os eventos
+    do dia anterior. O snapshot_date é calculado no próprio ETL
+    como date.today() - timedelta(days=1).
 
 Configuração:
     - Substituir os valores de S3_BUCKET, EMR_CLUSTER_ID e SNS_TOPIC_ARN
@@ -39,7 +32,6 @@ from airflow.operators.email import EmailOperator
 from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.operators.emr import EmrAddStepsOperator
 from airflow.providers.amazon.aws.sensors.emr import EmrStepSensor
-from airflow.providers.amazon.aws.sensors.s3 import S3KeySensor
 from airflow.utils.trigger_rule import TriggerRule
 
 # ================================================================
@@ -57,9 +49,6 @@ ALERT_EMAILS = Variable.get(
     default_var="data-team@company.com",
     deserialize_json=False,
 ).split(",")
-
-# Prefixo D-1 no formato de partição do S3: dt=YYYY-MM-DD
-D1_PREFIX = "dt={{ (execution_date - macros.timedelta(days=1)).strftime('%Y-%m-%d') }}"
 
 DEFAULT_ARGS = {
     "owner": "data-team",
@@ -79,64 +68,19 @@ with DAG(
     description="Pipeline ETL de GMV diário por subsidiária — snapshot histórico D-1",
     default_args=DEFAULT_ARGS,
     start_date=datetime(2023, 1, 1),
-    schedule_interval="0 6 * * *",   # executa às 06h00 UTC todos os dias
+    schedule_interval="0 6 * * *",   # executa às 06h00 UTC todos os dias (D-1)
     catchup=False,
     max_active_runs=1,
     tags=["gmv", "etl", "data-engineering"],
 ) as dag:
 
     # ================================================================
-    # SENSORES — monitoram as três tabelas de origem em paralelo
-    # ----------------------------------------------------------------
-    # Cada sensor aguarda um arquivo novo na pasta S3 correspondente
-    # ao dia anterior (D-1). O pipeline é disparado assim que qualquer
-    # um dos três detectar dados novos (trigger_rule=ONE_SUCCESS nos
-    # steps seguintes).
-    #
-    # poke_interval: verifica a cada 5 minutos
-    # timeout: aguarda até 4 horas antes de falhar
-    # mode="reschedule": libera o worker entre verificações
-    # ================================================================
-
-    sensor_purchase = S3KeySensor(
-        task_id="sensor_purchase",
-        bucket_name=S3_BUCKET,
-        bucket_key=f"events/purchase/{D1_PREFIX}/",
-        wildcard_match=True,
-        poke_interval=300,
-        timeout=14400,
-        mode="reschedule",
-        soft_fail=True,   # não bloqueia o pipeline se esta tabela não tiver evento
-    )
-
-    sensor_product_item = S3KeySensor(
-        task_id="sensor_product_item",
-        bucket_name=S3_BUCKET,
-        bucket_key=f"events/product_item/{D1_PREFIX}/",
-        wildcard_match=True,
-        poke_interval=300,
-        timeout=14400,
-        mode="reschedule",
-        soft_fail=True,
-    )
-
-    sensor_extra_info = S3KeySensor(
-        task_id="sensor_extra_info",
-        bucket_name=S3_BUCKET,
-        bucket_key=f"events/purchase_extra_info/{D1_PREFIX}/",
-        wildcard_match=True,
-        poke_interval=300,
-        timeout=14400,
-        mode="reschedule",
-        soft_fail=True,
-    )
-
-    # ================================================================
     # JOB EMR — submete o PySpark ao cluster
     # ----------------------------------------------------------------
-    # trigger_rule=ONE_SUCCESS: executa assim que qualquer sensor
-    # detectar evento novo, sem aguardar os demais.
-    # Isso implementa o requisito: "todas as tabelas são gatilhos".
+    # O ETL lê as três tabelas de origem (purchase, product_item,
+    # purchase_extra_info) e gera o snapshot do dia anterior (D-1).
+    # O snapshot_date é calculado internamente no gmv_etl.py como
+    # date.today() - timedelta(days=1).
     # ================================================================
 
     submit_emr_step = EmrAddStepsOperator(
@@ -157,7 +101,6 @@ with DAG(
                 },
             }
         ],
-        trigger_rule=TriggerRule.ONE_SUCCESS,  # gatilho: qualquer tabela com evento novo
     )
 
     # ================================================================
@@ -275,8 +218,7 @@ with DAG(
     # DEPENDÊNCIAS
     # ================================================================
 
-    # Sensores em paralelo → job EMR → repair
-    [sensor_purchase, sensor_product_item, sensor_extra_info] >> submit_emr_step
+    # job EMR → repair → alertas (se falhar)
     submit_emr_step >> wait_emr_step >> repair_table >> wait_repair
 
     # Qualquer falha no pipeline dispara SNS + e-mail em paralelo
