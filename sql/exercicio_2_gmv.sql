@@ -1,20 +1,65 @@
--- Consulta da visão corrente do GMV diário por subsidiária.
--- Como a solução utiliza snapshots imutáveis, os registros históricos
--- nunca são atualizados ou removidos.
--- A utilização de MAX(snapshot_date) retorna a versão mais recente
--- disponível dos dados, preservando a rastreabilidade temporal.
 
-SELECT
-    transaction_date,
-    subsidiary,
-    gmv,
-    purchase_count,
-    snapshot_date   AS processed_at
-FROM gmv_daily_snapshot
-WHERE snapshot_date = (
-    SELECT MAX(snapshot_date)
-    FROM gmv_daily_snapshot
+-- Estado mais recente de cada compra
+WITH latest_snapshot AS (
+    SELECT
+        purchase_id,
+        order_date,
+        subsidiary,
+        purchase_value,
+        snapshot_date,
+        ROW_NUMBER() OVER (
+            PARTITION BY purchase_id
+            ORDER BY snapshot_date DESC
+        ) AS rn
+    FROM gmv_purchase_snapshot
 )
+SELECT
+    order_date                        AS transaction_date,
+    subsidiary,
+    ROUND(SUM(purchase_value), 2)     AS gmv,
+    COUNT(purchase_id)                AS purchase_count,
+    MAX(snapshot_date)                AS last_processed_at
+FROM latest_snapshot
+WHERE rn = 1
+GROUP BY
+    order_date,
+    subsidiary
 ORDER BY
-    transaction_date,
+    order_date,
     subsidiary;
+	
+-- Estado histórico de uma compra
+
+WITH snapshot_at_date AS (
+    SELECT
+        purchase_id,
+        order_date,
+        subsidiary,
+        purchase_value,
+        snapshot_date,
+        ROW_NUMBER() OVER (
+            PARTITION BY purchase_id
+            ORDER BY snapshot_date DESC
+        ) AS rn
+    FROM gmv_purchase_snapshot
+    WHERE snapshot_date <= '2023-01-31'   -- <-- data de referência (Exemplo: mês de janeiro fechado
+      AND transaction_date >= '2023-01-01'
+      AND transaction_date <= '2023-01-31'
+)
+SELECT
+    order_date                        AS transaction_date,
+    subsidiary,
+    ROUND(SUM(purchase_value), 2)     AS gmv,
+    COUNT(purchase_id)                AS purchase_count
+FROM snapshot_at_date
+WHERE rn = 1
+GROUP BY
+    order_date,
+    subsidiary
+ORDER BY
+    order_date,
+    subsidiary;
+	
+
+
+
