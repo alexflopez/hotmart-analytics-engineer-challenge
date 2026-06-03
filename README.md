@@ -7,20 +7,21 @@ Solução técnica para o desafio de Analytics Engineer da Hotmart, composta por
 ```
 hotmart-analytics-engineer-challenge/
 ├── data/
-│   └── exercise2_sample_data.sql     # Dataset final populado com dados do desafio
+│   └── exercicio_2_amostra_dados_teste.sql     # Dataset final populado com dados do desafio
 ├── diagrams/
 │   └── gmv_flow.md                   # Fluxograma do pipeline ETL (Mermaid)
 ├── docs/
 │   ├── assumptions.md                # Premissas e requisitos da solução
 │   ├── architecture.md               # Arquitetura da solução
+│   ├── idempotency.md                # Estratégia adotada para idempotência do projeto
 │   └── tech_stack.md                 # Descrição da stack AWS
 ├── spark/
 │   └── gmv_etl.py                    # ETL PySpark — GMV diário por subsidiária
 ├── sql/
-│   ├── exercise1_ddl.sql             # DDL das tabelas (Exercício 1)
-│   ├── exercise1_queries.sql         # Queries top 50 produtores e top 2 produtos
-│   ├── exercise2_ddl.sql             # DDL da tabela gmv_daily_snapshot
-│   └── exercise2_gmv_current.sql     # Query GMV corrente por subsidiária
+│   ├── tables_ddl.sql                # DDL de todas as tabelas 
+│   ├── execicio_1_queries.sql        # DDL das tabelas (Exercício 1)
+│   ├── exercicio_2_ddl.sql           # DDL da tabela gmv_daily_snapshot
+│   └── exercicio_2_gmv.sql           # Query GMV corrente por subsidiária
 └── tests/
     └── test_gmv_etl.py               # Testes unitários do ETL
 ```
@@ -31,7 +32,7 @@ Queries para responder:
 - Top 50 produtores em faturamento em 2021
 - Top 2 produtos por faturamento de cada produtor
 
-**Entregáveis:** `sql/exercise1_ddl.sql` e `sql/exercise1_queries.sql`
+**Entregáveis:** `sql/execicio_1_queries.sql`
 
 ## Exercício 2 — Modelagem e Desenvolvimento
 
@@ -68,9 +69,9 @@ pytest tests/test_gmv_etl.py -v
 | Arquivo | Descrição |
 |---|---|
 | `spark/gmv_etl.py` | Script ETL PySpark |
-| `sql/exercise2_ddl.sql` | DDL da tabela final |
-| `data/exercise2_sample_data.sql` | Exemplo do dataset final populado |
-| `sql/exercise2_gmv_current.sql` | Query GMV corrente |
+| `sql/exercicio_2_ddl.sql` | DDL da tabela final |
+| `data/exercicio_2_amostra_dados_teste.sql` | Exemplo do dataset final populado |
+| `sql/exercicio_2_gmv.sql` | Query GMV corrente |
 | `docs/tech_stack.md` | Descrição da tech stack |
 | `diagrams/gmv_flow.md` | Fluxograma do pipeline |
 | `tests/test_gmv_etl.py` | Testes unitários |
