@@ -60,14 +60,3 @@ Considerações:
 * Permite processamento batch eficiente.
 
 Em ambiente produtivo, recomenda-se utilização de clusters temporários (ephemeral clusters), iniciados apenas durante a execução do pipeline, reduzindo custos de computação ociosa.
-
-## Possíveis Evoluções
-
-Dependendo do crescimento do volume de dados e frequência de processamento, poderiam ser avaliadas alternativas como:
-
-* Apache Iceberg.
-* Delta Lake.
-* EMR Serverless.
-* AWS Glue Jobs.
-
-Essas abordagens podem simplificar o gerenciamento operacional e otimizar ainda mais os custos de processamento e armazenamento.
